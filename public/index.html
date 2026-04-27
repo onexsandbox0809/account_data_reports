@@ -1,0 +1,598 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Account Opening Dashboard</title>
+
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;600;700&display=swap" rel="stylesheet">
+
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Manrope', sans-serif;
+      background: #f4f6f9;
+      display: flex;
+      font-size: 13px;
+    }
+
+    .sidebar {
+      width: 240px;
+      background: white;
+      height: 100vh;
+      border-right: 1px solid #eee;
+    }
+
+    .logo {
+      padding: 15px 20px;
+    }
+
+    .logo img {
+      max-width: 140px;
+    }
+
+    .menu {
+      padding: 10px;
+    }
+
+    .menu div {
+      padding: 12px;
+      margin-bottom: 5px;
+      cursor: pointer;
+      border-radius: 6px;
+      font-size: 13px;
+    }
+
+    .menu div:hover {
+      background: #f5f5f5;
+    }
+
+    .active {
+      background: #ffe6e6;
+      color: #e60023;
+      font-weight: 600;
+    }
+
+    .main {
+      flex: 1;
+      padding: 20px;
+    }
+
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+
+    .header h3 {
+      font-size: 16px;
+    }
+
+    .logout-btn {
+      background: #c62828;
+      color: white;
+      border: none;
+      padding: 8px 12px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 12px;
+    }
+
+    .filters {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 15px;
+      flex-wrap: wrap;
+      background: white;
+      padding: 15px;
+      border-radius: 10px;
+    }
+
+    .filters input {
+      padding: 8px;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+      font-size: 12px;
+    }
+
+    .btn {
+      padding: 8px 12px;
+      border-radius: 6px;
+      border: none;
+      cursor: pointer;
+      font-size: 12px;
+    }
+
+    .btn-filter {
+      background: #ff7a00;
+      color: white;
+    }
+
+    .btn-download {
+      background: #1f4e8c;
+      color: white;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: white;
+      border-radius: 10px;
+      overflow: hidden;
+      font-size: 12px;
+    }
+
+    th {
+      background: #f5f7fb;
+      padding: 12px;
+      text-align: left;
+      font-size: 12px;
+    }
+
+    td {
+      padding: 12px;
+      border-bottom: 1px solid #eee;
+      font-size: 12px;
+    }
+
+    .badge-success {
+      background: #e6f7ee;
+      color: green;
+      padding: 4px 8px;
+      border-radius: 10px;
+      font-size: 11px;
+    }
+
+    .badge-pending {
+      background: #fff4e5;
+      color: orange;
+      padding: 4px 8px;
+      border-radius: 10px;
+      font-size: 11px;
+    }
+  </style>
+</head>
+
+<body>
+
+<script>
+if (!localStorage.getItem("user")) {
+  window.location.href = "/loginUI.html";
+}
+</script>
+
+<div class="sidebar">
+  <div class="logo">
+    <img src="https://warcssm.1xtel.co/media/media/2b47ba00-2481-4131-a600-0d2ebd01f0b5/OneXtel_Logo_P.jpg">
+  </div>
+
+  <div class="menu">
+    <div class="active" onclick="switchMilestone('mile1', this)">Milestone 1: OTP Verification</div>
+    <div onclick="switchMilestone('mile2', this)">Milestone 2: PAN Verification</div>
+    <div onclick="switchMilestone('mile3', this)">Milestone 3: KYC Completed</div>
+    <div onclick="switchMilestone('mile4', this)">Milestone 4: Personal Details</div>
+    <div onclick="switchMilestone('final', this)">Final Account Details</div>
+  </div>
+</div>
+
+<div class="main">
+
+  <div class="header">
+    <h3>Account Opening Reports</h3>
+    <button class="logout-btn" onclick="logout()">Logout</button>
+  </div>
+
+  <div class="filters">
+    <input type="text" id="mobile" placeholder="Mobile">
+    <input type="text" id="urn" placeholder="URN">
+    <input type="date" id="date">
+    <button class="btn btn-filter" onclick="applyFilters()">Filter</button>
+    <button class="btn btn-download" onclick="downloadCSV()">Download</button>
+    <button class="btn btn-download" onclick="refreshData()">Refresh</button>
+  </div>
+
+  <table>
+    <thead id="tableHead"></thead>
+    <tbody id="tableBody"></tbody>
+  </table>
+
+</div>
+
+<script>
+
+let fullData = [];
+let currentMilestone = 'mile1';
+
+function logout() {
+  localStorage.removeItem("user");
+  window.location.href = "/loginUI.html";
+}
+
+function switchMilestone(type, el) {
+  currentMilestone = type;
+
+  document.querySelectorAll('.menu div').forEach(d => d.classList.remove('active'));
+  el.classList.add('active');
+
+  if (type === 'mile1') loadMile1();
+else if (type === 'mile2') loadMile2();
+else if (type === 'mile3') loadMile3();
+else if (type === 'mile4') loadMile4();
+else if (type === 'final') loadFinalReport();
+}
+
+function refreshData() {
+  if (currentMilestone === 'mile1') loadMile1();
+else if (currentMilestone === 'mile2') loadMile2();
+else if (currentMilestone === 'mile3') loadMile3();
+else if (currentMilestone === 'mile4') loadMile4();
+else if (currentMilestone === 'final') loadFinalReport();
+}
+
+function loadMile1() {
+  document.getElementById("tableHead").innerHTML = `
+    <tr>
+      <th>S.No</th>
+      <th>URN</th>
+      <th>Mobile</th>
+      <th>Date</th>
+      <th>Time</th>
+      <th>Status</th>
+    </tr>
+  `;
+
+  fetch('/api/getAllData?type=mile1')
+    .then(res => res.json())
+    .then(result => {
+      fullData = result.data || [];
+      renderMile1(fullData);
+    });
+}
+
+function renderMile1(data) {
+  const table = document.getElementById("tableBody");
+  table.innerHTML = "";
+
+  data.forEach((item, i) => {
+    table.innerHTML += `
+      <tr>
+        <td>${i+1}</td>
+        <td>${item.urn}</td>
+        <td>${item.mobile_number}</td>
+        <td>${item.date}</td>
+        <td>${item.time}</td>
+        <td>
+          ${(item.otp_validation || item.otp_status) === "OTP Verified"
+            ? '<span class="badge-success">Verified</span>'
+            : '<span class="badge-pending">Pending</span>'}
+        </td>
+      </tr>
+    `;
+  });
+}
+
+function loadMile2() {
+  document.getElementById("tableHead").innerHTML = `
+    <tr>
+      <th>S.No</th>
+      <th>URN</th>
+      <th>Account Type</th>
+      <th>Name</th>
+      <th>PAN</th>
+      <th>Status</th>
+      <th>Father</th>
+      <th>Mobile</th>
+      <th>Date</th>
+      <th>Time</th>
+    </tr>
+  `;
+
+  fetch('/api/getAllData?type=mile2')
+    .then(res => res.json())
+    .then(result => {
+      fullData = result.data || [];
+      renderMile2(fullData);
+    });
+}
+
+function renderMile2(data) {
+  const table = document.getElementById("tableBody");
+  table.innerHTML = "";
+
+  data.forEach((item, i) => {
+    table.innerHTML += `
+      <tr>
+        <td>${i+1}</td>
+        <td>${item.urn}</td>
+        <td>${item.account_type || '-'}</td>
+        <td>${item.full_name || '-'}</td>
+        <td>${item.pan_number || '-'}</td>
+        <td>
+          ${item.pan_status === "Verified"
+            ? '<span class="badge-success">Verified</span>'
+            : '<span class="badge-pending">Pending</span>'}
+        </td>
+        <td>${item.father_name || '-'}</td>
+        <td>${item.mobile_number}</td>
+        <td>${item.date}</td>
+        <td>${item.time}</td>
+      </tr>
+    `;
+  });
+}
+
+// ✅ NEW MILESTONE 3
+function loadMile3() {
+  document.getElementById("tableHead").innerHTML = `
+    <tr>
+      <th>S.No</th>
+      <th>URN</th>
+      <th>Mobile</th>
+      <th>Full Name</th>
+      <th>Gender</th>
+      <th>DOB</th>
+      <th>Aadhaar</th>
+      <th>Address</th>
+      <th>ZIP</th>
+      <th>Status</th>
+      <th>Date</th>
+      <th>Time</th>
+      <th>Image</th>
+    </tr>
+  `;
+
+  fetch('/api/getAllData?type=mile3')
+    .then(res => res.json())
+    .then(result => {
+      fullData = result.data || [];
+      renderMile3(fullData);
+    });
+}
+
+function renderMile3(data) {
+  const table = document.getElementById("tableBody");
+  table.innerHTML = "";
+
+  data.forEach((item, i) => {
+    table.innerHTML += `
+      <tr>
+        <td>${i+1}</td>
+        <td>${item.urn || '-'}</td> <!-- ✅ URN FIRST -->
+        <td>${item.mobile_number || '-'}</td> <!-- ✅ FIXED POSITION -->
+        <td>${item.full_name || '-'}</td>
+        <td>${item.gender || '-'}</td>
+        <td>${item.dob || '-'}</td>
+        <td>${item.masked_aadhaar || '-'}</td>
+        <td>${item.full_address || '-'}</td>
+        <td>${item.zip || '-'}</td>
+
+        <!-- ✅ STATUS (NOW CORRECT) -->
+        <td>
+          <span class="badge-success">
+            ${item.status || 'Verified'}
+          </span>
+        </td>
+
+        <td>${item.date || '-'}</td>
+        <td>${item.time || '-'}</td>
+
+        <!-- ✅ IMAGE LAST -->
+        <td>
+          ${
+            item.profile_image
+              ? `<a href="${item.profile_image}" target="_blank">View</a>`
+              : '-'
+          }
+        </td>
+      </tr>
+    `;
+  });
+}
+  // ✅ NEW MILESTONE 4
+  function loadMile4() {
+
+  currentMilestone = 'mile4';
+
+  document.getElementById("tableHead").innerHTML = `
+    <tr>
+      <th>S.No</th>
+      <th>URN</th>
+      <th>Mobile</th>
+      <th>Income</th>
+      <th>Marital Status</th>
+      <th>Account Type</th>
+      <th>Occupation</th>
+      <th>Home Ownership</th>
+      <th>Consent</th>
+      <th>Date</th>
+      <th>Time</th>
+    </tr>
+  `;
+
+  fetch('/api/getAllData?type=mile4')
+    .then(res => res.json())
+    .then(result => {
+      fullData = result.data || [];
+      renderMile4(fullData);
+    });
+}
+  function renderMile4(data) {
+  const table = document.getElementById("tableBody");
+  table.innerHTML = "";
+
+  data.forEach((item, i) => {
+    table.innerHTML += `
+      <tr>
+        <td>${i+1}</td>
+        <td>${item.urn || '-'}</td>
+        <td>${item.mobile_number || '-'}</td>
+        <td>${item.income || '-'}</td>
+        <td>${item.marital_status || '-'}</td>
+        <td>${item.account_type || '-'}</td>
+        <td>${item.occupation || '-'}</td>
+        <td>${item.home_ownership || '-'}</td>
+        <td>${item.consent || '-'}</td>
+        <td>${item.date || '-'}</td>
+        <td>${item.time || '-'}</td>
+      </tr>
+    `;
+  });
+}
+// ✅ NEW MILESTONE 5
+
+function loadFinalReport() {
+
+  document.getElementById("tableHead").innerHTML = `
+    <tr>
+      <th>S.No</th>
+      <th>URN</th>
+      <th>Mobile</th>
+      <th>OTP</th>
+      <th>Account Type</th>
+      <th>Name</th>
+      <th>PAN</th>
+      <th>PAN Status</th>
+      <th>Father</th>
+      <th>Gender</th>
+      <th>DOB</th>
+      <th>Aadhaar</th>
+      <th>Address</th>
+      <th>ZIP</th>
+      <th>Income</th>
+      <th>Marital</th>
+      <th>Occupation</th>
+      <th>Home</th>
+      <th>Consent</th>
+      <th>Date</th>
+      <th>Time</th>
+    </tr>
+  `;
+
+  fetch('/api/getAllData?type=final')
+    .then(res => res.json())
+    .then(result => {
+      fullData = result.data || [];
+      renderFinalReport(fullData);
+    });
+}
+  function renderFinalReport(data) {
+
+  const table = document.getElementById("tableBody");
+  table.innerHTML = "";
+
+  data.forEach((item, i) => {
+    table.innerHTML += `
+      <tr>
+        <td>${i+1}</td>
+        <td>${item.urn || '-'}</td>
+        <td>${item.mobile_number || '-'}</td>
+        <td>${item.otp_status || '-'}</td>
+        <td>${item.account_type || '-'}</td>
+        <td>${item.full_name || '-'}</td>
+        <td>${item.pan_number || '-'}</td>
+        <td>${item.pan_status || '-'}</td>
+        <td>${item.father_name || '-'}</td>
+        <td>${item.gender || '-'}</td>
+        <td>${item.dob || '-'}</td>
+        <td>${item.masked_aadhaar || '-'}</td>
+        <td class="address-cell">${item.full_address || '-'}</td>
+        <td>${item.zip || '-'}</td>
+        <td>${item.income || '-'}</td>
+        <td>${item.marital_status || '-'}</td>
+        <td>${item.occupation || '-'}</td>
+        <td>${item.home_ownership || '-'}</td>
+        <td>${item.consent || '-'}</td>
+        <td>${item.date || '-'}</td>
+        <td>${item.time || '-'}</td>
+      </tr>
+    `;
+  });
+}
+  
+function applyFilters() {
+
+  const mobile = document.getElementById("mobile").value.trim().toLowerCase();
+  const urn = document.getElementById("urn").value.trim().toLowerCase();
+  const dateInput = document.getElementById("date").value;
+
+  let formattedDate = "";
+  if (dateInput) {
+    const [y, m, d] = dateInput.split("-");
+    formattedDate = `${d}/${m}/${y}`;
+  }
+
+  let filtered = fullData.filter(item => {
+
+    const itemMobile = (
+      item.mobile_number ||
+      item.mobile ||
+      item.phone_number ||
+      ""
+    ).toString().trim().toLowerCase();
+
+    const itemUrn = (item.urn || "").toString().trim().toLowerCase();
+
+    const itemDate = (item.date || "")
+      .replace(/-/g, "/")
+      .trim();
+
+    let matchMobile = !mobile || itemMobile.includes(mobile);
+    let matchUrn = !urn || itemUrn.includes(urn);
+    let matchDate = !formattedDate || itemDate === formattedDate;
+
+    return matchMobile && matchUrn && matchDate;
+  });
+
+  if (currentMilestone === 'mile1') renderMile1(filtered);
+  else if (currentMilestone === 'mile2') renderMile2(filtered);
+  else if (currentMilestone === 'mile3') renderMile3(filtered);
+  else if (currentMilestone === 'mile4') renderMile4(filtered);
+  else if (currentMilestone === 'final') renderFinalReport(filtered);
+}
+  function downloadCSV(data = fullData) {
+
+  if (!data || data.length === 0) {
+    alert("No data available to download");
+    return;
+  }
+
+  // 🔥 Get headers dynamically
+  const headers = Object.keys(data[0]);
+
+  // 🔥 Convert JSON → CSV
+  const csvRows = [];
+
+  // Header row
+  csvRows.push(headers.join(","));
+
+  // Data rows
+  data.forEach(row => {
+    const values = headers.map(header => {
+      let val = row[header] ?? "";
+
+      // Escape commas & quotes
+      val = val.toString().replace(/"/g, '""');
+
+      return `"${val}"`;
+    });
+
+    csvRows.push(values.join(","));
+  });
+
+  const csvString = csvRows.join("\n");
+
+  // 🔥 Download file
+  const blob = new Blob([csvString], { type: "text/csv" });
+  const url = window.URL.createObjectURL(blob);
+
+  const a = document.createElement("a");
+  a.setAttribute("href", url);
+  a.setAttribute("download", `${currentMilestone}_report.csv`);
+  a.click();
+}
+
+loadMile1();
+
+</script>
+
+</body>
+</html>
