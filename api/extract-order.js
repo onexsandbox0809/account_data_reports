@@ -26,10 +26,10 @@ export default async function handler(req, res) {
     orderJson.product_items.forEach((item, index) => {
       const prefix = `Product_${index + 1}`;
 
-      response[`${prefix}.retail_id`] = item.product_retailer_id;
-      response[`${prefix}.quantity`] = item.quantity;
-      response[`${prefix}.price`] = item.item_price;
-      response[`${prefix}.currency`] = item.currency;
+      response[`${prefix}_retail_id`] = item.product_retailer_id;
+      response[`${prefix}_quantity`] = item.quantity;
+      response[`${prefix}_price`] = item.item_price;
+      response[`${prefix}_currency`] = item.currency;
     });
 
     return res.status(200).json(response);
